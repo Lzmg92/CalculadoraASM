@@ -80,9 +80,11 @@ jmp encabezado
         msg4        db 'El resultado es: $' 
         msg5        db  0dh,0ah ,'thank you for using the calculator! press any key... ', 0Dh,0Ah, '$'
         err1        db  "Operador incorrecto!", 0Dh,0Ah , '$'
-        smth        db  " and something.... $"  
+        smth        db  " and something.... $" 
+        divr        db  "=>$" 
         dosdi       db  2
-        clec        db  2
+        clec        db  2 
+        
         file db "c:\input.txt", 0
         BUF db ?
         ; operator can be: '+','-','*','/' or 'q' to exit in the middle.
@@ -166,9 +168,11 @@ read:
     int 21h
     CMP AX, 0 ; how many bytes transfered?
     JZ afin ; end program if end of file is reached (no bytes left).
-    mov al, BUF ; char is in BUF, send to ax for printing (char isin al)
+    mov al, BUF ; char is in BUF, send to ax for printing (char isin al) 
+    mov ah,0eh ; print character (teletype).
+    int 10h
     cmp al, ','
-    je  read
+    je  coma
     cmp al, '*'
     je  amulti
     cmp al, "+" 
@@ -177,39 +181,50 @@ read:
     je  aresta
     cmp al, "/"
     je  adiv
-    jmp cknum
-
-print:
-    mov ah,0eh ; print character (teletype).
-    int 10h
-    jmp read ; repeat if not end of file.
+    jmp cknum 
+coma:     
+    mov clec,2
+    jmp read
 
 cknum:
+    dec clec
     cmp al,00110000b
     jb  read 
     cmp al,00111001b
     ja  read  
-    
+        
     mov ah,0
-    sub al,30h 
+    sub al,30h
     
-    push ax
-    jmp print 
+    cmp clec,0
+    je  fulln
+    mov dx,10d
+    
+    mul dx 
+    mov num1,ax
+    jmp read
+    
+ fulln:
+    add ax, num1    
+    push ax  
+    jmp read
 
 afin:  
     mov ah, 1      
     int 21h
     jmp encabezado
 
-amulti:
+amulti: 
+    despliega  divr
     pop ax
     pop dx 
     mul dx      
     push ax 
     call print_num
-    jmp read 
+    jmp read
     
-asuma:   
+asuma:     
+    despliega  divr   
     pop ax
     pop dx 
     add ax,dx      
@@ -218,19 +233,22 @@ asuma:
     jmp read
 
 aresta: 
+    despliega  divr
     pop ax
     pop dx 
-    sub ax,dx      
-    push ax 
-    call print_num
+    sub dx,ax      
+    push dx 
+    mov ax,dx
+    call print_num 
     jmp read 
     
-adiv:  
+adiv: 
+    despliega  divr 
     pop ax
     pop dx 
     div dx      
     push ax 
-    call print_num
+    call print_num 
     jmp read
 
     
