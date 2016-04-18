@@ -22,12 +22,6 @@ INT 21H
 endm
 ;----------------------------------------------------------------
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; this maro is copied from emu8086.inc ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; this macro prints a char in AL and advances
 ; the current cursor position:
 PUTC    MACRO   char
         PUSH    AX
@@ -36,7 +30,6 @@ PUTC    MACRO   char
         INT     10h     
         POP     AX
 ENDM
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -89,14 +82,18 @@ jmp encabezado
         err1        db  "Operador incorrecto!", 0Dh,0Ah , '$'
         smth        db  " and something.... $"  
         dosdi       db  2
-
+        clec        db  2
+        file db "c:\input.txt", 0
+        BUF db ?
         ; operator can be: '+','-','*','/' or 'q' to exit in the middle.
         opr         db '?'
         
         ; first and second number:
-        num1 dw ?
-        num2 dw ? 
-        tope dw ?
+        num1    dw ?
+        num2    dw ? 
+        tope    dw ? 
+        fpila   dw ? 
+       
 
 
 encabezado:
@@ -152,8 +149,90 @@ salir:
 archivo:    
     limpiar       
     colocar 1,0  
-    despliega MsjArc        
-    jmp salir 
+    despliega MsjArc
+    
+    mov dx, offset file ; address of file to dx
+    mov al,0 ; open file (read-only)
+    mov ah,3dh
+    int 21h ; call the interupt
+    jc  menuerr ; if error occurs, terminate program
+    mov bx,ax ; put handler to file in bx
+    
+    mov cx,1 ; read one character at a time
+    
+read:
+    lea dx, BUF
+    mov ah,3fh ; read from the opened file (its handler in bx)
+    int 21h
+    CMP AX, 0 ; how many bytes transfered?
+    JZ afin ; end program if end of file is reached (no bytes left).
+    mov al, BUF ; char is in BUF, send to ax for printing (char isin al)
+    cmp al, ','
+    je  read
+    cmp al, '*'
+    je  amulti
+    cmp al, "+" 
+    je  asuma
+    cmp al, "-"
+    je  aresta
+    cmp al, "/"
+    je  adiv
+    jmp cknum
+
+print:
+    mov ah,0eh ; print character (teletype).
+    int 10h
+    jmp read ; repeat if not end of file.
+
+cknum:
+    cmp al,00110000b
+    jb  read 
+    cmp al,00111001b
+    ja  read  
+    
+    mov ah,0
+    sub al,30h 
+    
+    push ax
+    jmp print 
+
+afin:  
+    mov ah, 1      
+    int 21h
+    jmp encabezado
+
+amulti:
+    pop ax
+    pop dx 
+    mul dx      
+    push ax 
+    call print_num
+    jmp read 
+    
+asuma:   
+    pop ax
+    pop dx 
+    add ax,dx      
+    push ax 
+    call print_num
+    jmp read
+
+aresta: 
+    pop ax
+    pop dx 
+    sub ax,dx      
+    push ax 
+    call print_num
+    jmp read 
+    
+adiv:  
+    pop ax
+    pop dx 
+    div dx      
+    push ax 
+    call print_num
+    jmp read
+
     
 fact: 
     limpiar       
@@ -188,8 +267,6 @@ fin:
     call print_num     
     jmp menures 
      
-
-
 
 calcu:     
     limpiar
