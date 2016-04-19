@@ -21,7 +21,16 @@ MOv AH,9
 INT 21H
 endm
 ;----------------------------------------------------------------
-
+newLine macro
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset endl 
+    mov cx, endls
+    int 21h 
+endm
+;----------------------------------------------------------------
+    
+;----------------------------------------------------------------
 PUTC    MACRO   char
         PUSH    AX
         MOV     AL, char
@@ -110,6 +119,9 @@ jmp encabezado
         text2       db "hi!"
         text2_size  = $ - offset text2
         
+        endl        DB  0Dh,0Ah
+        endls       = $ - offset endl
+        
         file        db "c:\input.txt", 0
         BUF         db ?
         opr         db '?'
@@ -184,17 +196,75 @@ salir:
     ; write to file:
     mov ah, 40h
     mov bx, handle
-    mov dx, offset MsjU
+    mov dx, offset MsjU 
     mov cx, MsjUs
     dec cx
-    int 21h   
-        
+    int 21h  
+      
+    newLine  
+    
     mov ah, 40h
     mov bx, handle
-    mov dx, offset MsjFac
+    mov dx, offset MsjFac 
     mov cx, MsjFacs
-    int 21h             
+    dec cx
+    int 21h         
+
+    newLine                  
+   
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjSub 
+    mov cx, MsjSubs
+    dec cx
+    int 21h
+         
+    newLine   
     
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjSem 
+    mov cx, MsjSems
+    dec cx
+    int 21h 
+
+    newLine   
+   
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjSec 
+    mov cx, MsjSecs
+    dec cx
+    int 21h 
+    
+    newLine
+
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjNom 
+    mov cx, MsjNoms
+    dec cx
+    int 21h 
+
+    newLine
+
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjCar 
+    mov cx, MsjCars
+    dec cx
+    int 21h 
+
+    newLine
+
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjPra 
+    mov cx, MsjPras
+    dec cx
+    int 21h          
+    
+    new Line
     ; close c:\emu8086\vdrive\C\test1\file1.txt
     mov ah, 3eh
     mov bx, handle
