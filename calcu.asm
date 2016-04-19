@@ -99,7 +99,6 @@ jmp encabezado
         msg2        db "enter the operator:    +  -  *  /     : $"
         msg3        db "enter second number: $"
         msg4        db 'El resultado es: $' 
-        msg5        db  0dh,0ah ,'thank you for using the calculator! press any key... ', 0Dh,0Ah, '$'
         err1        db  "Operador incorrecto!", 0Dh,0Ah , '$'
         smth        db  " and something.... $" 
         divr        db  "=>$" 
@@ -264,7 +263,7 @@ salir:
     dec cx
     int 21h          
     
-    new Line
+    newLine
     ; close c:\emu8086\vdrive\C\test1\file1.txt
     mov ah, 3eh
     mov bx, handle
@@ -273,7 +272,8 @@ salir:
     nop
            
     MOV AH,4CH           
-    INT 21H  
+    INT 21H 
+    ret 
 
 archivo:    
     limpiar       
@@ -480,10 +480,7 @@ again:
 
     exit:
     ; output of a string at ds:dx
-    lea dx, msg5
-    mov ah, 09h
-    int 21h  
-
+    jmp menuerr
 
     ; wait for any key...
     mov ah, 0
@@ -532,77 +529,66 @@ menuerr:
     je  encabezado
     jmp salir
     
-    ;----- GESTION DE OPERACIONES ARITMETICAS
+    ;-------------- GESTION DE OPERACIONES ARITMETICAS
     
-    do_plus:
-    
+do_plus:    
     colocar 2,0
     mov ax, num1
     add ax, num2  
     cmp ax,11111111b  
-    ja  menuerr
-    call print_num    ; print ax value.
-    mov num1,ax
-    
-    jmp menures
-    
-    
-    
-    do_minus:
-    
+    ja  menuerrd
+    jmp pdres   
+       
+do_minus:    
     colocar 2,0
     mov ax, num1
     sub ax, num2   
     cmp ax,11111111b  
-    ja  menuerr
-    call print_num    ; print ax value.
-    mov num1,ax
+    ja  menuerrd
+    jmp pdres   
     
-    jmp menures
-    
-    
-    
-    
-    do_mult:
-    
+do_mult:    
     colocar 2,0
     mov ax, num1
     imul num2 ; (dx ax) = ax * num2.
     ;------------------------------------------------------------------ 
     cmp ax,11111111b  
-    ja  menuerr
-    call print_num    ; print ax value.
-    ; dx is ignored (calc works with tiny numbers only).
-    mov num1,ax
-    
-    jmp menures
+    ja  menuerrd
+    jmp pdres
      
     
-    do_div:
-    ; dx is ignored (calc works with tiny integer numbers only). 
+do_div: 
     colocar 2,0
     mov dx, 0
     mov ax, num1
     idiv num2  ; ax = (dx ax) / num2.
     cmp dx, 0
-    jnz approx
+    jnz approx   
     cmp ax,11111111b  
-    ja  menuerr
-    call print_num    ; print ax value.
-    jmp exit
+    ja  menuerrd
+    jmp pdres 
    
-    approx:       
+approx:       
     cmp ax,11111111b  
     ja  menuerr
     call print_num    ; print ax value.
     lea dx, smth
     mov ah, 09h    ; output string at ds:dx
     int 21h  
-    mov num1,ax
-    
+    mov num1,ax    
     jmp menures
     
-
+menuerrd:
+    cmp ax,1111111111111111b
+    ja  menuerr
+    cmp ax, 1111111100000001b
+    ja  pdres
+    jmp menuerr
+    
+pdres:
+    call print_num    ; print ax value.
+    mov num1,ax  
+    jmp menures
 
 
 ; gets the multi-digit SIGNED number from the keyboard,
@@ -686,9 +672,14 @@ ok_digit:
         MOV     DX, CX      ; backup, in case the result will be too big.
         ADD     CX, AX
         JC      too_big2    ; jump if the number is too big.
-        dec     dosdi
-        CMP     dosdi, 0
-        JE      stop_input
+        dec     dosdi    
+        nop
+        nop
+        nop 
+        nop 
+        nop
+        CMP     dosdi, 0 
+        JE      stop_input          
         JMP     next_digit
 
 set_minus:
