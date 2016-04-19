@@ -22,7 +22,6 @@ INT 21H
 endm
 ;----------------------------------------------------------------
 
-; the current cursor position:
 PUTC    MACRO   char
         PUSH    AX
         MOV     AL, char
@@ -39,16 +38,29 @@ org 100h
 
 jmp encabezado
 
-
-; define variables:
         MsjU        DB 'Universidad de San Carlos de Guatemala$'
-        MsjFac      DB 'Facultad de Ingenieria$'
+        MsjUs       = $ - offset MsjU
+        
+        MsjFac      DB 'Facultad de Ingenieria$'  
+        MsjFacs     = $ - offset MsjFac
+        
         MsjSub      DB 'Arquitectura de Computadores y Ensambladores 1$'
-        MsjSem      DB 'Primer Semestre 2016$'
-        MsjSec      DB 'Seccion A$'
-        MsjNom      DB 'Leslie Fabiola Morales Gonzalez$'
-        MsjCar      DB '201314808$'
-        MsjPra      DB 'Segunda Practica$' 
+        MsjSubs     = $ - offset MsjSub
+        
+        MsjSem      DB 'Primer Semestre 2016$' 
+        MsjSems     = $ - offset MsjSem
+        
+        MsjSec      DB 'Seccion A$'  
+        MsjSecs     = $ - offset MsjSec
+        
+        MsjNom      DB 'Leslie Fabiola Morales Gonzalez$'  
+        MsjNoms     = $ - offset MsjNom
+        
+        MsjCar      DB '201314808$'      
+        MsjCars     = $ - offset MsjCar
+        
+        MsjPra      DB 'Segunda Practica$'  
+        MsjPras     = $ - offset MsjPra
         
         MsjMP       DB 'Menu principal$'
         MsjMP1      DB '    1. Archivo de entrada$'
@@ -84,17 +96,28 @@ jmp encabezado
         divr        db  "=>$" 
         dosdi       db  2
         clec        db  2 
+
+        dir1        db "c:\test1", 0
+        dir2        db "test2", 0
+        dir3        db "newname", 0
+        file1       db "c:\test1\file1.txt", 0
+        file2       db "c:\test1\newfile.txt", 0
+        file3       db "t1.txt", 0
+        handle      dw ?
         
-        file db "c:\input.txt", 0
-        BUF db ?
-        ; operator can be: '+','-','*','/' or 'q' to exit in the middle.
+        text        db "lazy dog jumps over red fox."
+        text_size   = $ - offset text
+        text2       db "hi!"
+        text2_size  = $ - offset text2
+        
+        file        db "c:\input.txt", 0
+        BUF         db ?
         opr         db '?'
-        
-        ; first and second number:
-        num1    dw ?
-        num2    dw ? 
-        tope    dw ? 
-        fpila   dw ? 
+
+        num1        dw ?
+        num2        dw ? 
+        tope        dw ? 
+        fpila       dw ? 
        
 
 
@@ -144,7 +167,41 @@ encabezado:
                 
 salir:            
     colocar 2,0  
-    despliega MsjFin        
+    despliega MsjFin   
+    
+    mov ax, cs
+    mov dx, ax
+    mov es, ax
+    
+    ; create and open file: c:\emu8086\vdrive\C\test1\file1.txt
+    mov ah, 3ch
+    mov cx, 0
+    mov dx, offset file1
+    int 21h
+    jc err
+    mov handle, ax 
+    
+    ; write to file:
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjU
+    mov cx, MsjUs
+    dec cx
+    int 21h   
+        
+    mov ah, 40h
+    mov bx, handle
+    mov dx, offset MsjFac
+    mov cx, MsjFacs
+    int 21h             
+    
+    ; close c:\emu8086\vdrive\C\test1\file1.txt
+    mov ah, 3eh
+    mov bx, handle
+    int 21h
+    err:
+    nop
+           
     MOV AH,4CH           
     INT 21H  
 
@@ -476,16 +533,6 @@ menuerr:
     jmp menures
     
 
-
-
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; these functions are copied from emu8086.inc ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ; gets the multi-digit SIGNED number from the keyboard,
